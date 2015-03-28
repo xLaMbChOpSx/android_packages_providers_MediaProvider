@@ -68,6 +68,7 @@ import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
@@ -245,6 +246,14 @@ public class MediaProvider extends ContentProvider {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (Intent.ACTION_MEDIA_EJECT.equals(intent.getAction())) {
+                if (SystemProperties.get("sys.shutdown.requested").equals("1")){
+                    // If the eject is done because of a reboot or a shutdown,
+                    // we don't want everything to be erased.
+                    // Playlist information on external SD will be lost
+                    // We can do this because if sd card is removed anyway,
+                    // the scanner will remove invalid entries.
+                    return;
+                }
                 StorageVolume storage = (StorageVolume)intent.getParcelableExtra(
                         StorageVolume.EXTRA_STORAGE_VOLUME);
                 // If primary external storage is ejected, then remove the external volume
